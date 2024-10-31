@@ -6,7 +6,10 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+
+import static java.lang.System.exit;
 
 public class ReceiveLogs {
 
@@ -37,7 +40,7 @@ public class ReceiveLogs {
         registerMessageLimit(channel, queueName, messageLimit);
 
         // Iniciar la suscripción y desconectar al alcanzar el límite de mensajes
-        startSubscription(channel, queueName, messageLimit);
+        startSubscription(connection, channel, queueName, messageLimit);
     }
 
     /**
@@ -75,12 +78,12 @@ public class ReceiveLogs {
     /**
      * Inicia la suscripción al canal y se desconecta después de recibir el número de mensajes especificado.
      */
-    private static void startSubscription(Channel channel, String queueName, int messageLimit) throws Exception {
+    private static void startSubscription(Connection connection,Channel channel, String queueName, int messageLimit) throws Exception {
         final int[] messageCount = {0};  // Contador de mensajes
 
         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
             if (messageCount[0] < messageLimit) {
-                String message = new String(delivery.getBody(), "UTF-8");
+                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                 System.out.println(" [x] Received '" + GREEN + message + RESET + "'");
                 messageCount[0]++;
 
@@ -90,7 +93,8 @@ public class ReceiveLogs {
                         System.out.println(" [*] Se ha alcanzado el límite de mensajes (" + messageLimit + "). Desconectando...");
                         channel.queueDelete(queueName);  // Eliminar la cola en el servidor
                         channel.close();  // Cerrar el canal
-                          // todo Cerrar la conexión
+                        connection.close();  // Cerrar la conexión
+                        exit(0);  // Salir del programa
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

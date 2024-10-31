@@ -11,3 +11,6 @@ dos hilos. uno gestiona las suscripciones y otro manda los mensajes(?)
 
 lo que está claro es que debo recibir un ack de que efectivamente la cola fue eliminada?
 
+unicamente cerrar la conexión cuando se cierra el programa, ya que es
+algo costoso. sin embargo puedo cerrar y abrir canales sin problema,
+son una acción barata. De hecho, una conexión puede tener múltiples canales.

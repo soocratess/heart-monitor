@@ -8,6 +8,7 @@ import com.rabbitmq.client.DeliverCallback;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -94,7 +95,7 @@ public class EmitLog {
             try {
                 String message = reader.readLine(); // Leer la siguiente línea del archivo
                 if (message != null) {
-                    channel.basicPublish(EXCHANGE_NAME, "", null, message.getBytes("UTF-8"));
+                    channel.basicPublish(EXCHANGE_NAME, "", null, message.getBytes(StandardCharsets.UTF_8));
                     System.out.println(" [x] Sent '" + GREEN + message + RESET + "'");
 
                     // Lógica para verificar y eliminar colas si alcanzan su límite
@@ -114,8 +115,13 @@ public class EmitLog {
      * Función para manejar las colas de los clientes y eliminar las que alcanzan su límite de mensajes.
      */
     private static void handleClientQueues(Channel channel) throws IOException {
-        for (String queueName : queueInfoMap.keySet()) {
-            ClientQueueInfo queueInfo = queueInfoMap.get(queueName);
+        // Usar un Iterator para eliminar elementos durante la iteración
+        var iterator = queueInfoMap.entrySet().iterator();
+
+        while (iterator.hasNext()) {
+            var entry = iterator.next();
+            String queueName = entry.getKey();
+            ClientQueueInfo queueInfo = entry.getValue();
 
             // Incrementar contador de mensajes de la cola
             queueInfo.incrementMessageCount();
@@ -124,11 +130,12 @@ public class EmitLog {
             if (queueInfo.hasReachedLimit()) {
                 // Eliminar la cola si ha alcanzado su límite de mensajes
                 channel.queueDelete(queueName);
-                queueInfoMap.remove(queueName);
+                iterator.remove(); // Eliminar de manera segura usando el iterador
                 System.out.println("Cola " + queueName + " eliminada después de alcanzar el límite de mensajes.");
             }
         }
     }
+
 
     /**
      * Configura un shutdown hook para cerrar la conexión, el canal y el scheduler al finalizar el programa.
@@ -147,7 +154,7 @@ public class EmitLog {
     }
 
     /**
-     * Método para agregar un cliente y su cola al HashMap con el contador inicializado en 0 y su límite específico.
+     * Metodo para agregar un cliente y su cola al HashMap con el contador inicializado en 0 y su límite específico.
      */
     public static void addClientQueue(String queueName, int messageLimit) {
         queueInfoMap.put(queueName, new ClientQueueInfo(messageLimit));
