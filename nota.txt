@@ -1,0 +1,13 @@
+el servidor debe ser el quien gestiona los canales y la duración de las
+suscripciones. es decir, el servidor cuenta cuántos mensajes tiene 
+que mandarle a cada cliente (una estructura de datos para esto) y, cuando llega 
+al final borra el canal (otra estructura para esto?). 
+no vale un fanout, sino que debe ser con colas y cada cola debe tener el 
+nombre del cliente. cuando llega el tiempo límite el servidor borra la cola.
+
+para tener la identificación de cada cliente por un lado (y poder eliminarlos), pero que por otro lado podamos enviar los mensajes a todos como si fuese un fanout
+
+dos hilos. uno gestiona las suscripciones y otro manda los mensajes(?)
+
+lo que está claro es que debo recibir un ack de que efectivamente la cola fue eliminada?
+
