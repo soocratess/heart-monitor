@@ -19,9 +19,11 @@ public class EmitLog {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("localhost");
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH));
-             Connection connection = factory.newConnection();
-             Channel channel = connection.createChannel()) {
+        BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH));
+        Connection connection = factory.newConnection();
+        Channel channel = connection.createChannel();
+
+        try  {
 
             // Declarar el exchange y la cola de registro
             channel.exchangeDeclare(EXCHANGE_NAME, "fanout");

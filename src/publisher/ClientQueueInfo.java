@@ -1,5 +1,8 @@
 package publisher;
 
+/**
+ * This class is used to store the message count and message limit for a client.
+ */
 public class ClientQueueInfo {
     private int messageCount;
     private final int messageLimit;

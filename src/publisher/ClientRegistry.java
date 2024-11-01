@@ -6,6 +6,9 @@ import com.rabbitmq.client.DeliverCallback;
 import java.io.IOException;
 import java.util.HashMap;
 
+/**
+ * This class is used to register clients and handle their queues.
+ */
 public class ClientRegistry {
     private static final String REGISTRATION_QUEUE = "registration_queue";
     private final Channel channel;

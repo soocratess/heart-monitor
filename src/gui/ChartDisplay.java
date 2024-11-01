@@ -2,21 +2,27 @@ package gui;
 
 import javax.swing.*;
 
+/**
+ * This class is used to display the ECG GUI through a thread.
+ */
 public class ChartDisplay implements Runnable {
 
     private Chart chart;
 
+    public ChartDisplay(Chart chart) {
+        this.chart = chart;
+    }
+
     @Override
     public void run() {
-        this.chart = new Chart();
-        chart.setAlwaysOnTop(true);
-        chart.pack();
-        chart.setSize(800, 600);
-        chart.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        chart.setVisible(true);
+        this.chart.setAlwaysOnTop(true);
+        this.chart.pack();
+        this.chart.setSize(800, 600);
+        this.chart.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.chart.setVisible(true);
     }
 
     public Chart getChart() {
-        return chart;
+        return this.chart;
     }
 }
