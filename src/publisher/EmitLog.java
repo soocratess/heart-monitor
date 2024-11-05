@@ -41,9 +41,18 @@ public class EmitLog {
             // Configurar el shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
-                    scheduler.shutdown();
-                    channel.close();
-                    connection.close();
+                    if (reader != null) {
+                        reader.close();
+                    }
+                    if (scheduler != null) {
+                        scheduler.shutdown();
+                    }
+                    if (channel != null && channel.isOpen()) {
+                        channel.close();
+                    }
+                    if (connection != null && connection.isOpen()) {
+                        connection.close();
+                    }
                     System.out.println("Conexión y canal cerrados.");
                 } catch (Exception e) {
                     e.printStackTrace();

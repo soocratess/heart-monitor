@@ -11,13 +11,11 @@ import java.nio.charset.StandardCharsets;
 public class MessageSubscriber {
     private static final String GREEN = "\033[32m";
     private static final String RESET = "\u001B[0m";
-    private final Connection connection;
-    private final Channel channel;
+    private RabbitMQClient rabbitMQClient;
     private final Chart chart;
 
-    public MessageSubscriber(Connection connection, Channel channel, Chart chart) {
-        this.connection = connection;
-        this.channel = channel;
+    public MessageSubscriber(RabbitMQClient rabbitMQClient, Chart chart) {
+        this.rabbitMQClient = rabbitMQClient;
         this.chart = chart;
     }
 
@@ -46,15 +44,15 @@ public class MessageSubscriber {
             }
         };
 
-        channel.basicConsume(queueName, true, deliverCallback, consumerTag -> {});
+        rabbitMQClient.getChannel().basicConsume(queueName, true, deliverCallback, consumerTag -> {});
     }
 
     private void closeResources(String queueName) {
         try {
             System.out.println(" [*] Se ha alcanzado el límite de mensajes. Desconectando...");
-            channel.queueDelete(queueName);
-            channel.close();
-            connection.close();
+            if (rabbitMQClient.getChannel().isOpen()) rabbitMQClient.getChannel().queueDelete(queueName);
+            if (rabbitMQClient.getChannel().isOpen())rabbitMQClient.getChannel().close();
+            if (rabbitMQClient.getConnection().isOpen()) rabbitMQClient.getConnection().close();
         } catch (Exception e) {
             e.printStackTrace();
         }

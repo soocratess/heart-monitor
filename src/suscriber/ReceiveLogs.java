@@ -41,11 +41,11 @@ public class ReceiveLogs {
             rabbitMQClient.setupExchange();
 
             // Registrar el límite de mensajes en el servidor
-            ClientRegistrer clientRegistrer = new ClientRegistrer(rabbitMQClient.getChannel());
+            ClientRegistrer clientRegistrer = new ClientRegistrer(rabbitMQClient);
             String queueName = clientRegistrer.registerClient(messageLimit);
 
             // Iniciar la suscripción a mensajes
-            MessageSubscriber subscriber = new MessageSubscriber(rabbitMQClient.getConnection(), rabbitMQClient.getChannel(), chart);
+            MessageSubscriber subscriber = new MessageSubscriber(rabbitMQClient, chart);
             subscriber.startSubscription(queueName, messageLimit);
 
         } catch (Exception e) {

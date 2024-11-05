@@ -4,8 +4,12 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
 public class RabbitMQClient {
     private static final String EXCHANGE_NAME = "logs";
+    private final String HOST_IP;
     private Connection connection;
     private Channel channel;
 
@@ -14,8 +18,14 @@ public class RabbitMQClient {
     }
 
     public RabbitMQClient(String host) throws Exception {
+        this.HOST_IP = host;
+        setupConnection();
+    }
+
+    public void setupConnection() throws Exception {
+        // Funcion que extiende la conexion con el servidor reabriendo el canal
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(host);
+        factory.setHost(this.HOST_IP);
         this.connection = factory.newConnection();
         this.channel = connection.createChannel();
     }

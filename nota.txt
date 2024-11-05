@@ -14,3 +14,10 @@ lo que está claro es que debo recibir un ack de que efectivamente la cola fue e
 unicamente cerrar la conexión cuando se cierra el programa, ya que es
 algo costoso. sin embargo puedo cerrar y abrir canales sin problema,
 son una acción barata. De hecho, una conexión puede tener múltiples canales.
+
+para renovar la suscripción:
+el cliente envía un mensaje al servidor, a la cola de suscripciones. En caso de
+que ya esté abierta, cierra la conexion y la vuelve a abrir. En caso de que no,
+debe abrir canal?
+
+CAMBIAR TODOS LOS LOCALHOST POR VARIABLES

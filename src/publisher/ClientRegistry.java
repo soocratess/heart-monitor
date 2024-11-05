@@ -46,6 +46,24 @@ public class ClientRegistry {
                 channel.queueDelete(queueName);
                 iterator.remove();
                 System.out.println("Cola " + queueName + " eliminada después de alcanzar el límite de mensajes.");
+
+                // Cerrar el canal
+                try {
+                    channel.close();
+                    System.out.println("Canal de " + queueName + " cerrado después de eliminar la cola del cliente.");
+                } catch (Exception e) {
+                    System.err.println("Error al cerrar el canal " + queueName + ": " + e.getMessage());
+                }
+
+                // Cerrar la conexión, si es apropiado TODO Revisar si es necesario
+                try {
+                    if (channel.getConnection() != null && channel.getConnection().isOpen()) {
+                        channel.getConnection().close();
+                        System.out.println("Conexión de " + queueName + " cerrada después de eliminar la cola del cliente.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error al cerrar la conexión " + queueName + ": " + e.getMessage());
+                }
             }
         }
     }
