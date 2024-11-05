@@ -23,12 +23,21 @@ public class RabbitMQClient {
     }
 
     public void setupConnection() throws Exception {
-        // Funcion que extiende la conexion con el servidor reabriendo el canal
+        // Cerrar conexión y canal existentes si están abiertos
+        if (connection != null && connection.isOpen()) {
+            connection.close();
+        }
+        if (channel != null && channel.isOpen()) {
+            channel.close();
+        }
+
+        // Crear una nueva conexión y canal
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(this.HOST_IP);
         this.connection = factory.newConnection();
         this.channel = connection.createChannel();
     }
+
 
     public void setupExchange() throws Exception {
         channel.exchangeDeclare(EXCHANGE_NAME, "fanout");

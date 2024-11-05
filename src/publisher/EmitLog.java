@@ -21,24 +21,24 @@ public class EmitLog {
 
         BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH));
         Connection connection = factory.newConnection();
-        Channel channel = connection.createChannel();
+        Channel publishChannel = connection.createChannel(); // Canal para publicar mensajes
+        Channel clientManagementChannel = connection.createChannel(); // Canal para gestionar clientes
 
-        try  {
+        try {
+            // Declarar el exchange y la cola de registro en el canal de publicación
+            publishChannel.exchangeDeclare(EXCHANGE_NAME, "fanout");
+            clientManagementChannel.queueDeclare(REGISTRATION_QUEUE, false, false, false, null);
 
-            // Declarar el exchange y la cola de registro
-            channel.exchangeDeclare(EXCHANGE_NAME, "fanout");
-            channel.queueDeclare(REGISTRATION_QUEUE, false, false, false, null);
-
-            // Crear el registro de clientes y configurar el listener
-            ClientRegistry clientRegistry = new ClientRegistry(channel);
+            // Crear el registro de clientes y configurar el listener en el canal de gestión
+            ClientRegistry clientRegistry = new ClientRegistry(clientManagementChannel);
             clientRegistry.setupRegistrationListener();
 
-            // Crear el programador de envío de mensajes
+            // Crear el programador de envío de mensajes usando el canal de publicación
             ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-            MessageSender messageSender = new MessageSender(channel, reader, clientRegistry, scheduler);
+            MessageSender messageSender = new MessageSender(publishChannel, reader, clientRegistry, scheduler);
             messageSender.startSendingMessages();
 
-            // Configurar el shutdown hook
+            // Configurar el shutdown hook para limpiar recursos
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
                     if (reader != null) {
@@ -47,13 +47,16 @@ public class EmitLog {
                     if (scheduler != null) {
                         scheduler.shutdown();
                     }
-                    if (channel != null && channel.isOpen()) {
-                        channel.close();
+                    if (publishChannel != null && publishChannel.isOpen()) {
+                        publishChannel.close();
+                    }
+                    if (clientManagementChannel != null && clientManagementChannel.isOpen()) {
+                        clientManagementChannel.close();
                     }
                     if (connection != null && connection.isOpen()) {
                         connection.close();
                     }
-                    System.out.println("Conexión y canal cerrados.");
+                    System.out.println("Conexión y canales cerrados.");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -62,4 +65,5 @@ public class EmitLog {
             e.printStackTrace();
         }
     }
+
 }

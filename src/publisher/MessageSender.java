@@ -11,13 +11,13 @@ import java.util.concurrent.TimeUnit;
 public class MessageSender {
     private static final String GREEN = "\033[32m";
     private static final String RESET = "\u001B[0m";
-    private final Channel channel;
+    private final Channel publishChannel; // Canal exclusivo para enviar mensajes
     private final BufferedReader reader;
     private final ClientRegistry clientRegistry;
     private final ScheduledExecutorService scheduler;
 
-    public MessageSender(Channel channel, BufferedReader reader, ClientRegistry clientRegistry, ScheduledExecutorService scheduler) {
-        this.channel = channel;
+    public MessageSender(Channel publishChannel, BufferedReader reader, ClientRegistry clientRegistry, ScheduledExecutorService scheduler) {
+        this.publishChannel = publishChannel;
         this.reader = reader;
         this.clientRegistry = clientRegistry;
         this.scheduler = scheduler;
@@ -28,9 +28,12 @@ public class MessageSender {
             try {
                 String message = reader.readLine();
                 if (message != null) {
-                    channel.basicPublish("logs", "", null, message.getBytes(StandardCharsets.UTF_8));
+                    // Enviar el mensaje utilizando el canal de publicación
+                    publishChannel.basicPublish("logs", "", null, message.getBytes(StandardCharsets.UTF_8));
                     System.out.println(" [x] Sent '" + GREEN + message + RESET + "'");
-                    clientRegistry.handleClientQueues(channel);
+
+                    // Manejar las colas de los clientes sin afectar el canal de publicación
+                    clientRegistry.handleClientQueues();
                 } else {
                     System.out.println("No more lines to read. Shutting down...");
                     scheduler.shutdown();

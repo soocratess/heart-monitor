@@ -11,11 +11,11 @@ import java.util.HashMap;
  */
 public class ClientRegistry {
     private static final String REGISTRATION_QUEUE = "registration_queue";
-    private final Channel channel;
+    private final Channel clientChannel; // Canal exclusivo para el manejo de clientes
     private final HashMap<String, ClientQueueInfo> queueInfoMap;
 
-    public ClientRegistry(Channel channel) {
-        this.channel = channel;
+    public ClientRegistry(Channel clientChannel) {
+        this.clientChannel = clientChannel;
         this.queueInfoMap = new HashMap<>();
     }
 
@@ -25,7 +25,7 @@ public class ClientRegistry {
             int messageLimit = Integer.parseInt(new String(delivery.getBody(), "UTF-8"));
             addClientQueue(queueName, messageLimit);
         };
-        channel.basicConsume(REGISTRATION_QUEUE, true, registerCallback, consumerTag -> {});
+        clientChannel.basicConsume(REGISTRATION_QUEUE, true, registerCallback, consumerTag -> {});
     }
 
     public void addClientQueue(String queueName, int messageLimit) {
@@ -33,7 +33,7 @@ public class ClientRegistry {
         System.out.println("Cliente conectado con cola: " + queueName + " y límite de mensajes: " + messageLimit);
     }
 
-    public void handleClientQueues(Channel channel) throws IOException {
+    public void handleClientQueues() throws IOException {
         var iterator = queueInfoMap.entrySet().iterator();
 
         while (iterator.hasNext()) {
@@ -43,28 +43,11 @@ public class ClientRegistry {
 
             queueInfo.incrementMessageCount();
             if (queueInfo.hasReachedLimit()) {
-                channel.queueDelete(queueName);
+                clientChannel.queueDelete(queueName); // Eliminar solo la cola del cliente
                 iterator.remove();
-                System.out.println("Cola " + queueName + " eliminada después de alcanzar el límite de mensajes.");
-
-                // Cerrar el canal
-                try {
-                    channel.close();
-                    System.out.println("Canal de " + queueName + " cerrado después de eliminar la cola del cliente.");
-                } catch (Exception e) {
-                    System.err.println("Error al cerrar el canal " + queueName + ": " + e.getMessage());
-                }
-
-                // Cerrar la conexión, si es apropiado TODO Revisar si es necesario
-                try {
-                    if (channel.getConnection() != null && channel.getConnection().isOpen()) {
-                        channel.getConnection().close();
-                        System.out.println("Conexión de " + queueName + " cerrada después de eliminar la cola del cliente.");
-                    }
-                } catch (Exception e) {
-                    System.err.println("Error al cerrar la conexión " + queueName + ": " + e.getMessage());
-                }
+                System.out.println("Cola " + queueName + " eliminada .");
             }
         }
     }
+
 }

@@ -5,12 +5,18 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.category.DefaultCategoryDataset;
+import suscriber.ClientRegistrer;
+import suscriber.MessageSubscriber;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.LinkedList;
 import java.util.Queue;
+
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
 
 /**
  * This class contains the code of the ECG GUI with a countdown timer and a "Renovar" button.
@@ -27,6 +33,10 @@ public class Chart extends JFrame {
     private JButton renewButton;
     private JTextField inputField;
 
+    // Variable para el registro del cliente
+    private ClientRegistrer clientRegistrer;
+
+
     public Chart(int messageLimit) {
         super("ECG Monitor");
 
@@ -42,7 +52,40 @@ public class Chart extends JFrame {
 
         setContentPane(mainPanel);
         setSize(800, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Agregar un WindowListener para cerrar recursos cuando se cierre la ventana
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                closeResources();  // Cerrar recursos al cerrar la ventana
+                dispose();
+            }
+        });
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);    }
+
+    // Funcion que permite la inyección de dependencias
+    public void setClientRegistrer(ClientRegistrer clientRegistrer) {
+        this.clientRegistrer = clientRegistrer;
+    }
+
+    public ClientRegistrer getClientRegistrer() {
+        return clientRegistrer;
+    }
+
+    /**
+     * Metodo para cerrar todos los recursos al cerrar la aplicación.
+     */
+    private void closeResources() {
+        if (clientRegistrer != null) {
+            try {
+                clientRegistrer.getRabbitMQClient().close(); // Cerrar la conexión RabbitMQ
+                System.out.println("Recursos cerrados correctamente.");
+            } catch (Exception e) {
+                System.err.println("Error al cerrar los recursos: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -71,9 +114,27 @@ public class Chart extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String inputText = inputField.getText();
-                setTimeLeft(Integer.parseInt(inputText));
+                if (!inputText.isEmpty()) {
+                    int newMessageLimit = Integer.parseInt(inputText);
+                    setTimeLeft(newMessageLimit);  // Actualizar el contador en la GUI
+
+                    try {
+                        // Llamar a reRegisterClient y obtener el nuevo nombre de la cola
+                        String newQueueName = clientRegistrer.reRegisterClient(newMessageLimit);
+
+                        // Reiniciar la suscripción en el cliente usando el nuevo nombre de cola
+                        MessageSubscriber subscriber = new MessageSubscriber(clientRegistrer.getRabbitMQClient(), Chart.this);
+                        subscriber.startSubscription(newQueueName, newMessageLimit);
+
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+
+                    inputField.setText("");
+                }
             }
         });
+
 
         JPanel counterPanel = new JPanel();
         counterPanel.add(counterLabel);

@@ -6,6 +6,7 @@ import com.rabbitmq.client.DeliverCallback;
 import gui.Chart;
 
 import javax.swing.SwingUtilities;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public class MessageSubscriber {
@@ -23,38 +24,56 @@ public class MessageSubscriber {
         final int[] messageCount = {0};
 
         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-            if (messageCount[0] < messageLimit) {
-                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                System.out.println(" [x] Received '" + GREEN + message + RESET + "'");
+            try {
+                if (messageCount[0] < messageLimit) {
+                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                    System.out.println(" [x] Received '" + GREEN + message + RESET + "'");
 
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        double bpm = 1D / Double.parseDouble(message);
-                        chart.addDataPoint(bpm);
-                    } catch (NumberFormatException e) {
-                        System.err.println("Error al convertir el mensaje a número: " + message);
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            double bpm = 1D / Double.parseDouble(message);
+                            chart.addDataPoint(bpm);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Error al convertir el mensaje a número: " + message);
+                        }
+                    });
+
+                    messageCount[0]++;
+
+                    if (messageCount[0] >= messageLimit) {
+                        closeResources(queueName);
                     }
-                });
-
-                messageCount[0]++;
-
-                if (messageCount[0] >= messageLimit) {
-                    closeResources(queueName);
                 }
+            } catch (Exception e) {
+                System.out.println(" [!] Conexión o canal cerrado. Intentando re-registrar...");
+                reRegisterSubscription(messageLimit);
             }
         };
 
         rabbitMQClient.getChannel().basicConsume(queueName, true, deliverCallback, consumerTag -> {});
     }
 
-    private void closeResources(String queueName) {
+    private void reRegisterSubscription(int messageLimit) {
         try {
-            System.out.println(" [*] Se ha alcanzado el límite de mensajes. Desconectando...");
-            if (rabbitMQClient.getChannel().isOpen()) rabbitMQClient.getChannel().queueDelete(queueName);
-            if (rabbitMQClient.getChannel().isOpen())rabbitMQClient.getChannel().close();
-            if (rabbitMQClient.getConnection().isOpen()) rabbitMQClient.getConnection().close();
+            // Re-registrar el cliente y reiniciar la suscripción
+            String newQueueName = chart.getClientRegistrer().reRegisterClient(messageLimit);
+            startSubscription(newQueueName, messageLimit); // Reiniciar la suscripción con la nueva cola
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+
+    private void closeResources(String queueName) {
+        try {
+            if (rabbitMQClient.getChannel().isOpen()) rabbitMQClient.getChannel().queueDelete(queueName);
+            if (rabbitMQClient.getChannel().isOpen()) rabbitMQClient.getChannel().close();
+            if (rabbitMQClient.getConnection().isOpen()) rabbitMQClient.getConnection().close();
+            System.out.println(" [*] Se ha alcanzado el límite de mensajes. Desconectado del servidor.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

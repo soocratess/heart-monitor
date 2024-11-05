@@ -1,23 +1,54 @@
-el servidor debe ser el quien gestiona los canales y la duración de las
-suscripciones. es decir, el servidor cuenta cuántos mensajes tiene 
-que mandarle a cada cliente (una estructura de datos para esto) y, cuando llega 
-al final borra el canal (otra estructura para esto?). 
-no vale un fanout, sino que debe ser con colas y cada cola debe tener el 
-nombre del cliente. cuando llega el tiempo límite el servidor borra la cola.
-
-para tener la identificación de cada cliente por un lado (y poder eliminarlos), pero que por otro lado podamos enviar los mensajes a todos como si fuese un fanout
-
 dos hilos. uno gestiona las suscripciones y otro manda los mensajes(?)
 
-lo que está claro es que debo recibir un ack de que efectivamente la cola fue eliminada?
 
-unicamente cerrar la conexión cuando se cierra el programa, ya que es
-algo costoso. sin embargo puedo cerrar y abrir canales sin problema,
-son una acción barata. De hecho, una conexión puede tener múltiples canales.
+Imprimir en tiempo real en el servidor cuando un cliente se desconecta en RabbitMQ:
 
-para renovar la suscripción:
-el cliente envía un mensaje al servidor, a la cola de suscripciones. En caso de
-que ya esté abierta, cierra la conexion y la vuelve a abrir. En caso de que no,
-debe abrir canal?
+Detectar Desconexiones Automáticamente en el Servidor (Modo Reactivo):
+RabbitMQ ofrece una forma de detectar automáticamente la desconexión de un cliente cuando la conexión se cierra
+inesperadamente, sin necesidad de notificación explícita. Para esto, puedes utilizar la configuración de Event
+Listeners en RabbitMQ (si estás usando un plugin de RabbitMQ Management) o hacer que el servidor detecte cuando
+una cola temporal desaparece.
 
-CAMBIAR TODOS LOS LOCALHOST POR VARIABLES
+Configurar un Consumer en el Servidor para Detectar la Desconexión Automática
+Crear Colas Temporales en el Cliente: En el cliente, las colas deben tener el atributo autoDelete configurado en true.
+Esto significa que RabbitMQ eliminará automáticamente la cola cuando la conexión del cliente se cierre.
+
+Registrar un Callback de Manejo de Errores en el Servidor: Puedes configurar un Consumer en el servidor que detecte si
+una cola temporal ya no existe, lo cual indica que el cliente ha desconectado.
+
+
+package publisher;
+
+import com.rabbitmq.client.*;
+
+public class ClientConnectionMonitor {
+
+    private static final String REGISTRATION_QUEUE = "registration_queue";
+
+    public static void main(String[] args) throws Exception {
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost("localhost");
+        Connection connection = factory.newConnection();
+        Channel channel = connection.createChannel();
+
+        channel.queueDeclare(REGISTRATION_QUEUE, false, false, false, null);
+
+        System.out.println("Esperando clientes para registro...");
+
+        DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+            String queueName = delivery.getProperties().getReplyTo();
+            System.out.println("Cliente registrado en cola: " + queueName);
+
+            // Agregar un callback para manejar cuando el cliente se desconecta
+            channel.addShutdownListener(cause -> {
+                System.out.println("Desconexión detectada para la cola: " + queueName);
+            });
+        };
+
+        channel.basicConsume(REGISTRATION_QUEUE, true, deliverCallback, consumerTag -> {});
+    }
+}
+
+
+
+

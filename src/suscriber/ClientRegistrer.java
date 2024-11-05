@@ -1,7 +1,6 @@
 package suscriber;
 
 import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
 
 import java.nio.charset.StandardCharsets;
 
@@ -11,6 +10,10 @@ public class ClientRegistrer {
 
     public ClientRegistrer(RabbitMQClient rabbitMQClient) {
         this.rabbitMQClient = rabbitMQClient;
+    }
+
+    public RabbitMQClient getRabbitMQClient() {
+        return rabbitMQClient;
     }
 
     public String registerClient(int messageLimit) throws Exception {
@@ -27,13 +30,20 @@ public class ClientRegistrer {
         return queueName;
     }
 
-    // TODO Funcion que extiende la conexion con el servidor reabriendo el canal
-    public void reRegisterClient(int messageLimit) throws Exception {
-        if (rabbitMQClient.getChannel().getConnection().isOpen() && rabbitMQClient.getChannel().isOpen()) {
-            rabbitMQClient.getChannel().close();
+    public String reRegisterClient(int messageLimit) throws Exception {
+        // Cerrar recursos si están abiertos
+        if (rabbitMQClient.getConnection().isOpen() || rabbitMQClient.getChannel().isOpen()) {
+            rabbitMQClient.close();
         }
-        rabbitMQClient.getChannel().queueDelete(REGISTRATION_QUEUE);
 
-        registerClient(messageLimit);
+        // Reconfigurar la conexión y registrar la cola nuevamente
+        rabbitMQClient.setupConnection();
+        String queueName = registerClient(messageLimit);
+        System.out.println(" [*] Re-registrado con nueva cola: " + queueName);
+
+        // Retornar el nombre de la nueva cola
+        return queueName;
     }
+
+
 }
