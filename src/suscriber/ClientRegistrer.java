@@ -16,9 +16,15 @@ public class ClientRegistrer {
         return rabbitMQClient;
     }
 
+    /**
+     * Registra un cliente en el servidor con un límite de mensajes
+     * @param messageLimit Límite de mensajes a recibir
+     * @return Nombre de la cola registrada
+     * @throws Exception
+     */
     public String registerClient(int messageLimit) throws Exception {
         String queueName = rabbitMQClient.getChannel().queueDeclare("", false, false, true, null).getQueue();
-        rabbitMQClient.getChannel().queueBind(queueName, RabbitMQClient.getExchangeName(), "");
+        rabbitMQClient.getChannel().queueBind(queueName, RabbitMQClient.getMessageQueue(), "");
 
         // Enviar el límite de mensajes al servidor para registrarlo
         String message = Integer.toString(messageLimit);
@@ -30,6 +36,12 @@ public class ClientRegistrer {
         return queueName;
     }
 
+    /**
+     * Re-registra un cliente en el servidor con un nuevo límite de mensajes
+     * @param messageLimit Nuevo límite de mensajes a recibir
+     * @return Nombre de la nueva cola registrada
+     * @throws Exception
+     */
     public String reRegisterClient(int messageLimit) throws Exception {
         // Cerrar recursos si están abiertos
         if (rabbitMQClient.getConnection().isOpen() || rabbitMQClient.getChannel().isOpen()) {

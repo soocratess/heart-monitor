@@ -4,6 +4,7 @@ import javax.swing.*;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.data.category.DefaultCategoryDataset;
 import suscriber.ClientRegistrer;
 import suscriber.MessageSubscriber;
@@ -16,6 +17,9 @@ import java.util.Queue;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+
+import org.jfree.chart.axis.CategoryAxis;
+import org.jfree.chart.plot.CategoryPlot;
 
 
 /**
@@ -97,8 +101,24 @@ public class Chart extends JFrame {
         JFreeChart chart = ChartFactory.createLineChart(
                 "Electrocardiogram Monitor", "time (s)", "bpm", dataset
         );
+
+        // Personalizar el eje X para reducir la cantidad de etiquetas mostradas
+        CategoryPlot plot = chart.getCategoryPlot();
+        CategoryAxis xAxis = plot.getDomainAxis();
+
+        // Configura el intervalo de etiquetas y estilo de fuente
+        xAxis.setTickLabelsVisible(true);
+        xAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_90); // Girar etiquetas, opcionalmente
+        xAxis.setTickLabelPaint(Color.GRAY); // Cambiar color de las etiquetas
+        xAxis.setTickLabelFont(new Font("SansSerif", Font.PLAIN, 10));
+        xAxis.setMaximumCategoryLabelWidthRatio(2.0f);
+
+        // Cambiar el fondo del gráfico a un color casi blanco
+        plot.setBackgroundPaint(new Color(240, 240, 240)); // Color de fondo casi blanco
+
         return new ChartPanel(chart);
     }
+
 
     /**
      * Crea el panel de control con el contador, el botón "Renovar" y el campo de entrada.
@@ -144,26 +164,37 @@ public class Chart extends JFrame {
         return counterPanel;
     }
 
+    // Variable para llevar el conteo global del tiempo en segundos
+    private int timeCounter = 0;
+
     /**
      * Agrega un punto de datos al gráfico y reduce el contador.
      *
      * @param bpm Valor de latidos por minuto para el eje Y
      */
     public void addDataPoint(double bpm) {
-        String timeLabel = timeStamps.size() + "s";
+        // Si el número de puntos en timeStamps ha alcanzado MAX_POINTS, elimina el dato más antiguo
+        if (timeStamps.size() >= MAX_POINTS) {
+            String oldestTime = timeStamps.poll(); // Elimina el tiempo más antiguo de la cola
+            dataset.removeValue("Heart Rate", oldestTime); // Elimina el valor correspondiente en el dataset
+        }
+
+        // Agrega el nuevo punto de datos con una etiqueta de tiempo que no se reinicia
+        String timeLabel = timeCounter + "s"; // Usa timeCounter en lugar del tamaño de la cola
         dataset.addValue(bpm, "Heart Rate", timeLabel);
         timeStamps.add(timeLabel);
 
-        if (timeStamps.size() > MAX_POINTS) {
-            String oldestTime = timeStamps.poll();
-            dataset.removeValue("Heart Rate", oldestTime);
-        }
+        // Incrementa el contador de tiempo global
+        timeCounter++;
 
+        // Actualiza el contador de tiempo restante
         if (timeLeft > 0) {
             timeLeft--;
         }
         counterLabel.setText("Time left (s): " + timeLeft);
     }
+
+
 
     public void setTimeLeft(int time) {
         timeLeft = time;

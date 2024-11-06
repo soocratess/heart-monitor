@@ -41,6 +41,6 @@ public class MessageSender {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }, 0, 1, TimeUnit.SECONDS);
+        }, 0, 1, TimeUnit.SECONDS); // Cambia a 1 segundo si necesitas una línea cada segundo
     }
 }
