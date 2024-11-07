@@ -41,6 +41,9 @@ public class Chart extends JFrame {
     // Variable para el registro del cliente
     private ClientRegistrer clientRegistrer;
 
+    public int getTimeLeft() {
+        return timeLeft;
+    }
 
     public Chart(int messageLimit) {
         super("Heart Monitor");
@@ -186,7 +189,7 @@ public class Chart extends JFrame {
         }
 
         // Agrega el nuevo punto de datos con una etiqueta de tiempo que no se reinicia
-        String timeLabel = timeCounter + "s"; // Usa timeCounter en lugar del tamaño de la cola
+        String timeLabel = timeCounter-60 + "s"; // Usa timeCounter en lugar del tamaño de la cola
         dataset.addValue(bpm, "Heart Rate", timeLabel);
         timeStamps.add(timeLabel);
 
