@@ -1,4 +1,0 @@
-eliminar threadpool
-
-hacer que se veann los lapsos de tiempo mandando en la cabecera
-del mensaje el número de línea

@@ -13,8 +13,8 @@ import suscriber.MessageSubscriber;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Deque;
 import java.util.LinkedList;
-import java.util.Queue;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -29,16 +29,16 @@ import org.jfree.chart.plot.CategoryPlot;
 public class Chart extends JFrame {
     private static final long serialVersionUID = 1L;
     private DefaultCategoryDataset dataset;
-    private Queue<String> timeStamps;
+    private Deque<String> timeStamps;
     private static final int MAX_POINTS = 60;
 
-    // Variables para el contador y el panel de entrada
+    // Variables for the countdown timer and GUI components
     private int timeLeft;
     private JLabel counterLabel;
     private JButton renewButton;
     private JTextField inputField;
 
-    // Variable para el registro del cliente
+    // Variable for the client registrer
     private ClientRegistrer clientRegistrer;
 
     public int getTimeLeft() {
@@ -48,12 +48,12 @@ public class Chart extends JFrame {
     public Chart(int messageLimit) {
         super("Heart Monitor");
 
-        // Configuración básica de la ventana y componentes
+        // Window configuration
         this.timeLeft = messageLimit;
         this.dataset = new DefaultCategoryDataset();
         this.timeStamps = new LinkedList<>();
 
-        // Crear el panel principal de la ventana
+        // Create the main panel with the chart and the counter panel
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.add(createChartPanel(), BorderLayout.CENTER);
         mainPanel.add(createCounterPanel(), BorderLayout.SOUTH);
@@ -61,7 +61,7 @@ public class Chart extends JFrame {
         setContentPane(mainPanel);
         setSize(800, 600);
 
-        // Agregar un WindowListener para cerrar recursos cuando se cierre la ventana
+        // Close resources when the window is closed
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -70,9 +70,10 @@ public class Chart extends JFrame {
             }
         });
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);    }
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }
 
-    // Funcion que permite la inyección de dependencias
+    // Setters and getters
     public void setClientRegistrer(ClientRegistrer clientRegistrer) {
         this.clientRegistrer = clientRegistrer;
     }
@@ -82,12 +83,12 @@ public class Chart extends JFrame {
     }
 
     /**
-     * Metodo para cerrar todos los recursos al cerrar la aplicación.
+     * Method to close resources when the window is closed.
      */
     private void closeResources() {
         if (clientRegistrer != null) {
             try {
-                clientRegistrer.getRabbitMQClient().close(); // Cerrar la conexión RabbitMQ
+                clientRegistrer.getRabbitMQClient().close(); // Close the RabbitMQ client
                 System.out.println("Recursos cerrados correctamente.");
             } catch (Exception e) {
                 System.err.println("Error al cerrar los recursos: " + e.getMessage());
@@ -97,32 +98,31 @@ public class Chart extends JFrame {
     }
 
     /**
-     * Crea y configura el panel del gráfico.
-     *
-     * @return ChartPanel con el gráfico de ECG.
+     * Create the chart panel with the ECG graph.
+     * @return ChartPanel with the ECG graph.
      */
     private ChartPanel createChartPanel() {
         JFreeChart chart = ChartFactory.createLineChart(
                 "Heart Monitor", "time (s)", "bpm", dataset
         );
 
-        // Personalizar el eje X para reducir la cantidad de etiquetas mostradas
+        // Personalize the chart
         CategoryPlot plot = chart.getCategoryPlot();
         CategoryAxis xAxis = plot.getDomainAxis();
 
-        // Configura el intervalo de etiquetas y estilo de fuente
+        // Configure the X axis
         xAxis.setTickLabelsVisible(true);
-        xAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_90); // Girar etiquetas, opcionalmente
-        xAxis.setTickLabelPaint(Color.GRAY); // Cambiar color de las etiquetas
+        xAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_90); // Turn the labels 90 degrees
+        xAxis.setTickLabelPaint(Color.GRAY); // Change the color of the labels
         xAxis.setTickLabelFont(new Font("SansSerif", Font.PLAIN, 10));
         xAxis.setMaximumCategoryLabelWidthRatio(2.0f);
 
-        // Cambiar el fondo del gráfico a un color casi blanco
-        plot.setBackgroundPaint(new Color(240, 240, 240)); // Color de fondo casi blanco
+        // Change the background color of the plot
+        plot.setBackgroundPaint(new Color(240, 240, 240)); // Light gray
 
-        // Configurar el eje Y para centrarlo en torno al valor 1.65
+        // Configure the Y axis
         NumberAxis yAxis = (NumberAxis) plot.getRangeAxis();
-        yAxis.setRange(1.0, 2.3); // Establecer el rango, de modo que 1.65 esté en el centro
+        yAxis.setRange(1.0, 2.3); // Set the range of the Y axis
 
 
         return new ChartPanel(chart);
@@ -145,13 +145,13 @@ public class Chart extends JFrame {
                 String inputText = inputField.getText();
                 if (!inputText.isEmpty()) {
                     int newMessageLimit = Integer.parseInt(inputText);
-                    setTimeLeft(newMessageLimit);  // Actualizar el contador en la GUI
+                    setTimeLeft(newMessageLimit);  // Set the new time limit
 
                     try {
-                        // Llamar a reRegisterClient y obtener el nuevo nombre de la cola
+                        // Re-register the client and restart the subscription
                         String newQueueName = clientRegistrer.reRegisterClient(newMessageLimit);
 
-                        // Reiniciar la suscripción en el cliente usando el nuevo nombre de cola
+                        // Restart the subscription with the new queue
                         MessageSubscriber subscriber = new MessageSubscriber(clientRegistrer.getRabbitMQClient(), Chart.this);
                         subscriber.startSubscription(newQueueName, newMessageLimit);
 
@@ -181,17 +181,27 @@ public class Chart extends JFrame {
      *
      * @param bpm Valor de latidos por minuto para el eje Y
      */
-    public void addDataPoint(double bpm) {
+    public void addDataPoint(int lineNumber, double bpm) {
+        // Si hay un hueco en los datos, rellena el espacio con un valor de -1
+        if (!timeStamps.isEmpty() && Integer.parseInt(timeStamps.peekLast()) != lineNumber-1) {
+            while(Integer.parseInt(timeStamps.peekLast()) != lineNumber-1) {
+                timeStamps.add(Integer.toString(Integer.parseInt(timeStamps.peekLast())+1));
+                dataset.addValue(-1, "Heart Rate", timeStamps.peekLast());
+            }
+        }
+
         // Si el número de puntos en timeStamps ha alcanzado MAX_POINTS, elimina el dato más antiguo
         if (timeStamps.size() >= MAX_POINTS) {
-            String oldestTime = timeStamps.poll(); // Elimina el tiempo más antiguo de la cola
-            dataset.removeValue("Heart Rate", oldestTime); // Elimina el valor correspondiente en el dataset
+            while (timeStamps.size() >= MAX_POINTS) {
+                String oldestTime = timeStamps.poll(); // Elimina el tiempo más antiguo de la cola
+                dataset.removeValue("Heart Rate", oldestTime); // Elimina el valor correspondiente en el dataset
+            }
         }
 
         // Agrega el nuevo punto de datos con una etiqueta de tiempo que no se reinicia
-        String timeLabel = timeCounter-60 + "s"; // Usa timeCounter en lugar del tamaño de la cola
-        dataset.addValue(bpm, "Heart Rate", timeLabel);
+        String timeLabel = String.valueOf(lineNumber); // Usa timeCounter en lugar del tamaño de la cola
         timeStamps.add(timeLabel);
+        dataset.addValue(bpm, "Heart Rate", timeLabel);
 
         // Incrementa el contador de tiempo global
         timeCounter++;

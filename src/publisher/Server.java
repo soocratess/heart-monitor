@@ -11,6 +11,11 @@ public class Server {
     private static final String EXCHANGE_NAME = "logs";
     private static final int THREAD_POOL_SIZE = 4;
 
+    /**
+     * Método principal que inicia el servidor.
+     * @param args
+     * @throws Exception
+     */
     public static void main(String[] args) throws Exception {
         // Configurar la conexión y los canales de RabbitMQ
         ConnectionFactory factory = new ConnectionFactory();

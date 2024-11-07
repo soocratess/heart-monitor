@@ -4,8 +4,8 @@ import com.rabbitmq.client.DeliverCallback;
 import gui.Chart;
 
 import javax.swing.SwingUtilities;
-
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 public class MessageSubscriber {
     private static final String GREEN = "\033[32m";
@@ -28,17 +28,28 @@ public class MessageSubscriber {
 
         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
             try {
-                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    System.out.println(" [x] Received '" + GREEN + message + RESET + "'");
+                // Obtener el mensaje en formato de texto
+                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                System.out.println(" [x] Received '" + GREEN + message + RESET + "'");
 
+                // Recuperar el número de línea desde las cabeceras del mensaje
+                Map<String, Object> headers = delivery.getProperties().getHeaders();
+                if (headers != null && headers.containsKey("line-number")) {
+                    int lineNumber = (int) headers.get("line-number");
+                    // Procesar el mensaje y actualizar el gráfico
                     SwingUtilities.invokeLater(() -> {
                         try {
                             double bpm = 1D / Double.parseDouble(message);
-                            chart.addDataPoint(bpm);
+                            chart.addDataPoint(lineNumber, bpm);
                         } catch (NumberFormatException e) {
                             System.err.println("Error al convertir el mensaje a número: " + message);
                         }
                     });
+                } else {
+                    System.out.println("Cabecera 'line-number' no encontrada en el mensaje.");
+                }
+
+
             } catch (Exception e) {
                 System.out.println(" [!] Conexión o canal cerrado. Intentando re-registrar...");
                 reStartSubscription(messageLimit);

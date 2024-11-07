@@ -22,6 +22,10 @@ public class ClientRegistry {
         this.queueInfoMap = new HashMap<>();
     }
 
+    /**
+     * Configura el listener para registrar clientes.
+     * @throws IOException
+     */
     public void setupRegistrationListener() throws IOException {
         connectionChannel.queueDeclare(REGISTRATION_QUEUE, true, false, false, null);
 
@@ -41,11 +45,20 @@ public class ClientRegistry {
         connectionChannel.basicConsume(REGISTRATION_QUEUE, true, registerCallback, consumerTag -> {});
     }
 
+    /**
+     * Agrega una cola de cliente al mapa de colas.
+     * @param queueName Nombre de la cola del cliente
+     * @param messageLimit Límite de mensajes para la cola
+     */
     public void addClientQueue(String queueName, int messageLimit) {
         queueInfoMap.put(queueName, new ClientQueueInfo(messageLimit));
         System.out.println("Cliente conectado con cola: " + queueName + " y límite de mensajes: " + messageLimit);
     }
 
+    /**
+     * Maneja las colas de los clientes eliminando las que han alcanzado el límite.
+     * @throws IOException
+     */
     public void handleClientQueues() throws IOException {
         var iterator = queueInfoMap.entrySet().iterator();
 
@@ -63,6 +76,10 @@ public class ClientRegistry {
         }
     }
 
+    /**
+     * Verifica si hay clientes conectados.
+     * @return true si hay clientes conectados, false de lo contrario
+     */
     public boolean hasClients() {
         return !queueInfoMap.isEmpty();
     }
