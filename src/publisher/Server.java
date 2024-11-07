@@ -22,9 +22,6 @@ public class Server {
         // Declarar el exchange
         publishChannel.exchangeDeclare(EXCHANGE_NAME, "fanout");
 
-        // Crear el pool de hilos con un tamaño fijo
-        ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
-
         // Crear el lector del archivo fuera del hilo programado
         BufferedReader reader = new BufferedReader(new FileReader("src/data/rr1.txt"));
 
@@ -32,23 +29,19 @@ public class Server {
         ClientRegistry clientRegistry = new ClientRegistry(connectionChannel, publishChannel);
 
         // Iniciar la gestión de conexiones de clientes
-        threadPool.submit(() -> {
             try {
                 clientRegistry.setupRegistrationListener();  // Ejecuta el listener de conexiones
                 System.out.println("Listener de conexiones iniciado.");
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        });
-
         // Crear y configurar MessageSender para enviar mensajes cada segundo
-        MessageSender messageSender = new MessageSender(publishChannel, reader, clientRegistry, threadPool);
+        MessageSender messageSender = new MessageSender(publishChannel, reader, clientRegistry);
         messageSender.startSendingMessages();
 
         // Configurar el shutdown hook para liberar recursos cuando el servidor se detenga
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
-                threadPool.shutdown();
                 if (connectionChannel.isOpen()) connectionChannel.close();
                 if (publishChannel.isOpen()) publishChannel.close();
                 if (connection.isOpen()) connection.close();

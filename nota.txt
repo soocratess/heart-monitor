@@ -1,3 +1,4 @@
-es necesario que siga produciendo linea?
+eliminar threadpool
 
-hacer que el nombre de la cola la genere el servidor pero con system time milisegundos
+hacer que se veann los lapsos de tiempo mandando en la cabecera
+del mensaje el número de línea
