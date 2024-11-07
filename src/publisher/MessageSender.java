@@ -15,28 +15,34 @@ public class MessageSender {
     private final BufferedReader reader;
     private final ClientRegistry clientRegistry;
     private final ScheduledExecutorService scheduler;
+    private int lineNumber;
 
     public MessageSender(Channel publishChannel, BufferedReader reader, ClientRegistry clientRegistry, ScheduledExecutorService scheduler) {
         this.publishChannel = publishChannel;
         this.reader = reader;
         this.clientRegistry = clientRegistry;
         this.scheduler = scheduler;
+        this.lineNumber = 0;
     }
 
     public void startSendingMessages() {
         scheduler.scheduleAtFixedRate(() -> {
             try {
                 String message = reader.readLine();
-                if (message != null) {
+                lineNumber++;
+
+                if (message != null && clientRegistry.hasClients()) {
                     // Enviar el mensaje utilizando el canal de publicación
                     publishChannel.basicPublish("logs", "", null, message.getBytes(StandardCharsets.UTF_8));
                     System.out.println(" [x] Sent '" + GREEN + message + RESET + "'");
 
                     // Manejar las colas de los clientes sin afectar el canal de publicación
                     clientRegistry.handleClientQueues();
-                } else {
+                } else if (message == null) {
                     System.out.println("No more lines to read. Shutting down...");
                     scheduler.shutdown();
+                } else {
+                    System.out.println("No clients connected. Line number: " + lineNumber);
                 }
             } catch (IOException e) {
                 e.printStackTrace();

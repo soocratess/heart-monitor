@@ -23,6 +23,8 @@ public class ClientRegistry {
     }
 
     public void setupRegistrationListener() throws IOException {
+        connectionChannel.queueDeclare(REGISTRATION_QUEUE, true, false, false, null);
+
         DeliverCallback registerCallback = (consumerTag, delivery) -> {
             String queueName = delivery.getProperties().getReplyTo();
             int messageLimit = Integer.parseInt(new String(delivery.getBody(), "UTF-8"));
@@ -59,6 +61,10 @@ public class ClientRegistry {
                 System.out.println("Cola " + queueName + " eliminada .");
             }
         }
+    }
+
+    public boolean hasClients() {
+        return !queueInfoMap.isEmpty();
     }
 
 }

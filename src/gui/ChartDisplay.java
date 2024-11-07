@@ -20,7 +20,7 @@ public class ChartDisplay implements Runnable {
         this.chart.setSize(800, 600);
         this.chart.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.chart.setTimeLeft(this.chart.getTimeLeft()+60);
-        for (int i=0; i<60; i++)this.chart.addDataPoint(1.65);
+        for (int i=0; i<60; i++)this.chart.addDataPoint(-1);
         this.chart.setVisible(true);
     }
 
