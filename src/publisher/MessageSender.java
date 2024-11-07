@@ -10,13 +10,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class MessageSender {
     private static final String GREEN = "\033[32m";
     private static final String RESET = "\u001B[0m";
-    private final Channel publishChannel; // Canal exclusivo para enviar mensajes
+    private final Channel publishChannel; // Exclusive channel for sending messages
     private final BufferedReader reader;
     private final ClientRegistry clientRegistry;
     private int lineNumber;
@@ -29,7 +27,7 @@ public class MessageSender {
     }
 
     /**
-     * Inicia el envío de mensajes a los clientes conectados.
+     * Starts sending messages to connected clients.
      */
     public void startSendingMessages() {
         Timer timer = new Timer();
@@ -42,24 +40,24 @@ public class MessageSender {
                     lineNumber++;
 
                     if (message != null && clientRegistry.hasClients()) {
-                        // Crear cabeceras con el número de línea
+                        // Create headers with the line number
                         Map<String, Object> headers = new HashMap<>();
                         headers.put("line-number", lineNumber);
 
-                        // Establecer propiedades con cabeceras
+                        // Set properties with headers
                         AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
                                 .headers(headers)
                                 .build();
 
-                        // Enviar el mensaje con las propiedades que incluyen el número de línea
+                        // Send the message with properties including the line number
                         publishChannel.basicPublish("logs", "", properties, message.getBytes(StandardCharsets.UTF_8));
                         System.out.println(" [x] Sent '" + GREEN + message + RESET + "' with line number: " + lineNumber);
 
-                        // Manejar las colas de los clientes sin afectar el canal de publicación
+                        // Handle client queues without affecting the publish channel
                         clientRegistry.handleClientQueues();
                     } else if (message == null) {
                         System.out.println("No more lines to read. Shutting down...");
-                        timer.cancel(); // Detiene el timer cuando no hay más mensajes
+                        timer.cancel(); // Stops the timer when there are no more messages
                     } else {
                         System.out.println("No clients connected. Line number " + lineNumber);
                     }
@@ -67,6 +65,6 @@ public class MessageSender {
                     e.printStackTrace();
                 }
             }
-        }, 0, 1000); // Ejecuta cada 1000 ms = 1 segundo
+        }, 0, 1000); // Executes every 1000 ms = 1 second
     }
 }

@@ -1,4 +1,4 @@
-package suscriber;
+package subscriber;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -35,13 +35,12 @@ public class RabbitMQClient {
         this.queueName = queueName;
     }
 
-
     /**
-     * Configura la conexión con el servidor RabbitMQ
+     * Sets up the connection with the RabbitMQ server
      * @throws Exception
      */
     public void setupConnection() throws Exception {
-        // Cerrar conexión y canal existentes si están abiertos
+        // Close existing connection and channel if they are open
         if (connection != null && connection.isOpen()) {
             connection.close();
         }
@@ -49,7 +48,7 @@ public class RabbitMQClient {
             channel.close();
         }
 
-        // Crear una nueva conexión y canal
+        // Create a new connection and channel
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(this.HOST_IP);
         this.connection = factory.newConnection();
@@ -57,16 +56,16 @@ public class RabbitMQClient {
     }
 
     /**
-     * Configura el exchange en el servidor RabbitMQ
+     * Sets up the exchange on the RabbitMQ server
      * @throws Exception
      */
     public void setupExchange() throws Exception {
         channel.exchangeDeclare(MESSAGE_QUEUE, "fanout");
-        System.out.println(" [*] Conectado al exchange " + MESSAGE_QUEUE);
+        System.out.println(" [*] Connected to exchange " + MESSAGE_QUEUE);
     }
 
     /**
-     * Cierra la conexión y el canal con el servidor RabbitMQ
+     * Closes the connection and the channel with the RabbitMQ server
      * @throws Exception
      */
     public void close() throws Exception {

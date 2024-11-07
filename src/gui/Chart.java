@@ -7,8 +7,8 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryLabelPositions;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.data.category.DefaultCategoryDataset;
-import suscriber.ClientRegistrer;
-import suscriber.MessageSubscriber;
+import subscriber.ClientRegistrer;
+import subscriber.MessageSubscriber;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -24,7 +24,7 @@ import org.jfree.chart.plot.CategoryPlot;
 
 
 /**
- * This class contains the code of the ECG GUI with a countdown timer and a "Renovar" button.
+ * This class contains the code for the ECG GUI with a countdown timer and a "Renew" button.
  */
 public class Chart extends JFrame {
     private static final long serialVersionUID = 1L;
@@ -65,7 +65,7 @@ public class Chart extends JFrame {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                closeResources();  // Cerrar recursos al cerrar la ventana
+                closeResources();  // Close resources when the window is closed
                 dispose();
             }
         });
@@ -89,16 +89,16 @@ public class Chart extends JFrame {
         if (clientRegistrer != null) {
             try {
                 clientRegistrer.getRabbitMQClient().close(); // Close the RabbitMQ client
-                System.out.println("Recursos cerrados correctamente.");
+                System.out.println("Resources closed successfully.");
             } catch (Exception e) {
-                System.err.println("Error al cerrar los recursos: " + e.getMessage());
+                System.err.println("Error closing resources: " + e.getMessage());
                 e.printStackTrace();
             }
         }
     }
 
     /**
-     * Create the chart panel with the ECG graph.
+     * Creates the chart panel with the ECG graph.
      * @return ChartPanel with the ECG graph.
      */
     private ChartPanel createChartPanel() {
@@ -112,7 +112,7 @@ public class Chart extends JFrame {
 
         // Configure the X axis
         xAxis.setTickLabelsVisible(true);
-        xAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_90); // Turn the labels 90 degrees
+        xAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_90); // Rotate the labels 90 degrees
         xAxis.setTickLabelPaint(Color.GRAY); // Change the color of the labels
         xAxis.setTickLabelFont(new Font("SansSerif", Font.PLAIN, 10));
         xAxis.setMaximumCategoryLabelWidthRatio(2.0f);
@@ -124,19 +124,17 @@ public class Chart extends JFrame {
         NumberAxis yAxis = (NumberAxis) plot.getRangeAxis();
         yAxis.setRange(1.0, 2.3); // Set the range of the Y axis
 
-
         return new ChartPanel(chart);
     }
 
 
     /**
-     * Crea el panel de control con el contador, el botón "Renovar" y el campo de entrada.
-     *
-     * @return JPanel que contiene el contador y el botón de renovación.
+     * Creates the control panel with the countdown timer, the "Renew" button, and the input field.
+     * @return JPanel that contains the counter and the renew button.
      */
     private JPanel createCounterPanel() {
         counterLabel = new JLabel("Counter: " + timeLeft);
-        renewButton = new JButton("Renovar");
+        renewButton = new JButton("Renew");
         inputField = new JTextField(5);
 
         renewButton.addActionListener(new ActionListener() {
@@ -164,7 +162,6 @@ public class Chart extends JFrame {
             }
         });
 
-
         JPanel counterPanel = new JPanel();
         counterPanel.add(counterLabel);
         counterPanel.add(renewButton);
@@ -173,47 +170,45 @@ public class Chart extends JFrame {
         return counterPanel;
     }
 
-    // Variable para llevar el conteo global del tiempo en segundos
+    // Variable to keep track of the global time count in seconds
     private int timeCounter = 0;
 
     /**
-     * Agrega un punto de datos al gráfico y reduce el contador.
+     * Adds a data point to the graph and reduces the counter.
      *
-     * @param bpm Valor de latidos por minuto para el eje Y
+     * @param bpm Heartbeats per minute value for the Y-axis
      */
     public void addDataPoint(int lineNumber, double bpm) {
-        // Si hay un hueco en los datos, rellena el espacio con un valor de -1
-        if (!timeStamps.isEmpty() && Integer.parseInt(timeStamps.peekLast()) != lineNumber-1) {
-            while(Integer.parseInt(timeStamps.peekLast()) != lineNumber-1) {
-                timeStamps.add(Integer.toString(Integer.parseInt(timeStamps.peekLast())+1));
+        // If there is a gap in the data, fill the space with a value of -1
+        if (!timeStamps.isEmpty() && Integer.parseInt(timeStamps.peekLast()) != lineNumber - 1) {
+            while (Integer.parseInt(timeStamps.peekLast()) != lineNumber - 1) {
+                timeStamps.add(Integer.toString(Integer.parseInt(timeStamps.peekLast()) + 1));
                 dataset.addValue(-1, "Heart Rate", timeStamps.peekLast());
             }
         }
 
-        // Si el número de puntos en timeStamps ha alcanzado MAX_POINTS, elimina el dato más antiguo
+        // If the number of points in timeStamps has reached MAX_POINTS, remove the oldest data
         if (timeStamps.size() >= MAX_POINTS) {
             while (timeStamps.size() >= MAX_POINTS) {
-                String oldestTime = timeStamps.poll(); // Elimina el tiempo más antiguo de la cola
-                dataset.removeValue("Heart Rate", oldestTime); // Elimina el valor correspondiente en el dataset
+                String oldestTime = timeStamps.poll(); // Remove the oldest time from the queue
+                dataset.removeValue("Heart Rate", oldestTime); // Remove the corresponding value in the dataset
             }
         }
 
-        // Agrega el nuevo punto de datos con una etiqueta de tiempo que no se reinicia
-        String timeLabel = String.valueOf(lineNumber); // Usa timeCounter en lugar del tamaño de la cola
+        // Add the new data point with a non-resetting time label
+        String timeLabel = String.valueOf(lineNumber); // Use lineNumber instead of the queue size
         timeStamps.add(timeLabel);
         dataset.addValue(bpm, "Heart Rate", timeLabel);
 
-        // Incrementa el contador de tiempo global
+        // Increment the global time counter
         timeCounter++;
 
-        // Actualiza el contador de tiempo restante
+        // Update the remaining time counter
         if (timeLeft > 0) {
             timeLeft--;
         }
         counterLabel.setText("Time left (s): " + timeLeft);
     }
-
-
 
     public void setTimeLeft(int time) {
         timeLeft = time;

@@ -12,8 +12,8 @@ import java.util.HashMap;
  */
 public class ClientRegistry {
     private static final String REGISTRATION_QUEUE = "registration_queue";
-    private final Channel connectionChannel; // Canal exclusivo para el manejo de clientes
-    private final Channel publishChannel; // Canal para publicar mensajes
+    private final Channel connectionChannel; // Exclusive channel for managing clients
+    private final Channel publishChannel; // Channel for publishing messages
     private final HashMap<String, ClientQueueInfo> queueInfoMap;
 
     public ClientRegistry(Channel clientChannel, Channel publishChannel) {
@@ -23,7 +23,7 @@ public class ClientRegistry {
     }
 
     /**
-     * Configura el listener para registrar clientes.
+     * Sets up the listener to register clients.
      * @throws IOException
      */
     public void setupRegistrationListener() throws IOException {
@@ -35,10 +35,10 @@ public class ClientRegistry {
             addClientQueue(queueName, messageLimit);
         };
 
-        // Callback que se ejecutará cuando un cliente se desconecte
+        // Callback that is executed when a client disconnects
         CancelCallback disconnectCallback = consumerTag -> {
-            System.out.println("Cliente desconectado con consumerTag: " + consumerTag);
-            // Buscar y eliminar la cola del cliente del mapa usando el consumerTag
+            System.out.println("Client disconnected with consumerTag: " + consumerTag);
+            // Find and remove the client's queue from the map using the consumerTag
             queueInfoMap.entrySet().removeIf(entry -> entry.getKey().equals(consumerTag));
         };
 
@@ -46,17 +46,17 @@ public class ClientRegistry {
     }
 
     /**
-     * Agrega una cola de cliente al mapa de colas.
-     * @param queueName Nombre de la cola del cliente
-     * @param messageLimit Límite de mensajes para la cola
+     * Adds a client queue to the queue map.
+     * @param queueName Name of the client's queue
+     * @param messageLimit Message limit for the queue
      */
     public void addClientQueue(String queueName, int messageLimit) {
         queueInfoMap.put(queueName, new ClientQueueInfo(messageLimit));
-        System.out.println("Cliente conectado con cola: " + queueName + " y límite de mensajes: " + messageLimit);
+        System.out.println("Client connected with queue: " + queueName + " and message limit: " + messageLimit);
     }
 
     /**
-     * Maneja las colas de los clientes eliminando las que han alcanzado el límite.
+     * Manages client queues by removing those that have reached the message limit.
      * @throws IOException
      */
     public void handleClientQueues() throws IOException {
@@ -69,16 +69,16 @@ public class ClientRegistry {
 
             queueInfo.incrementMessageCount();
             if (queueInfo.hasReachedLimit()) {
-                publishChannel.queueDelete(queueName); // Eliminar solo la cola del cliente
+                publishChannel.queueDelete(queueName); // Delete only the client's queue
                 iterator.remove();
-                System.out.println("Cola " + queueName + " eliminada .");
+                System.out.println("Queue " + queueName + " deleted.");
             }
         }
     }
 
     /**
-     * Verifica si hay clientes conectados.
-     * @return true si hay clientes conectados, false de lo contrario
+     * Checks if there are any connected clients.
+     * @return true if there are connected clients, false otherwise
      */
     public boolean hasClients() {
         return !queueInfoMap.isEmpty();

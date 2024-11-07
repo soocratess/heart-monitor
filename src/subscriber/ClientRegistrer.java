@@ -1,4 +1,4 @@
-package suscriber;
+package subscriber;
 
 import com.rabbitmq.client.AMQP;
 
@@ -17,48 +17,46 @@ public class ClientRegistrer {
     }
 
     /**
-     * Registra un cliente en el servidor con un límite de mensajes
-     * @param messageLimit Límite de mensajes a recibir
-     * @return Nombre de la cola registrada
+     * Registers a client on the server with a message limit
+     * @param messageLimit Limit of messages to receive
+     * @return Name of the registered queue
      * @throws Exception
      */
     public String registerClient(int messageLimit) throws Exception {
-        // Nombre de la cola dinámico basado en el tiempo en milisegundos
+        // Dynamic queue name based on the current time in milliseconds
         String queueName = "rabbit.client-" + System.currentTimeMillis();
         rabbitMQClient.getChannel().queueDeclare(queueName, false, false, false, null);
         rabbitMQClient.getChannel().queueBind(queueName, RabbitMQClient.getMessageQueue(), "");
         rabbitMQClient.setQueueName(queueName);
 
-        // Enviar el límite de mensajes al servidor para registrarlo
+        // Send the message limit to the server for registration
         String message = Integer.toString(messageLimit);
         rabbitMQClient.getChannel().basicPublish("", REGISTRATION_QUEUE, new AMQP.BasicProperties.Builder()
                 .replyTo(queueName)
                 .build(), message.getBytes(StandardCharsets.UTF_8));
 
-        System.out.println(" [*] Límite de mensajes (" + messageLimit + ") enviado al servidor para la cola: " + queueName);
+        System.out.println(" [*] Message limit (" + messageLimit + ") sent to the server for queue: " + queueName);
         return queueName;
     }
 
     /**
-     * Re-registra un cliente en el servidor con un nuevo límite de mensajes
-     * @param messageLimit Nuevo límite de mensajes a recibir
-     * @return Nombre de la nueva cola registrada
+     * Re-registers a client on the server with a new message limit
+     * @param messageLimit New message limit to receive
+     * @return Name of the new registered queue
      * @throws Exception
      */
     public String reRegisterClient(int messageLimit) throws Exception {
-        // Cerrar recursos si están abiertos
+        // Close resources if they are open
         if (rabbitMQClient.getConnection().isOpen() || rabbitMQClient.getChannel().isOpen()) {
             rabbitMQClient.close();
         }
 
-        // Reconfigurar la conexión y registrar la cola nuevamente
+        // Reconfigure the connection and register the queue again
         rabbitMQClient.setupConnection();
         String queueName = registerClient(messageLimit);
-        System.out.println(" [*] Re-registrado con nueva cola: " + queueName);
+        System.out.println(" [*] Re-registered with new queue: " + queueName);
 
-        // Retornar el nombre de la nueva cola
+        // Return the name of the new queue
         return queueName;
     }
-
-
 }

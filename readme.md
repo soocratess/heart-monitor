@@ -20,7 +20,7 @@ The project is organized into the following packages:
     - `MessageSender`: Reads data from the file and sends messages to subscribed clients.
     - `Server`: Configures and runs the publishing server.
 
-- **`suscriber`**: Contains classes related to the client and data subscription.
+- **`subscriber`**: Contains classes related to the client and data subscription.
     - `Client`: Main client class that enables subscription and renewal.
     - `ClientRegistrer`: Allows registering or renewing a client's subscription on the server.
     - `MessageSubscriber`: Receives and processes messages from the server.
@@ -59,7 +59,7 @@ The project is organized into the following packages:
 
 ### Starting a Client
 
-1. Run the `Client` class in the `suscriber` package.
+1. Run the `Client` class in the `subscriber` package.
 2. Provide the server IP and the message limit for the subscription.
 3. The client will connect to the server, receive real-time data, and display the heart rate in a chart.
 

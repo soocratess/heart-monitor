@@ -12,45 +12,46 @@ public class Server {
     private static final int THREAD_POOL_SIZE = 4;
 
     /**
-     * Método principal que inicia el servidor.
+     * Main method that starts the server.
      * @param args
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        // Configurar la conexión y los canales de RabbitMQ
+        // Set up RabbitMQ connection and channels
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("localhost");
         Connection connection = factory.newConnection();
         Channel connectionChannel = connection.createChannel();
         Channel publishChannel = connection.createChannel();
 
-        // Declarar el exchange
+        // Declare the exchange
         publishChannel.exchangeDeclare(EXCHANGE_NAME, "fanout");
 
-        // Crear el lector del archivo fuera del hilo programado
+        // Create the file reader outside the scheduled thread
         BufferedReader reader = new BufferedReader(new FileReader("src/data/rr1.txt"));
 
-        // Crear una instancia de ClientRegistry para la gestión de clientes
+        // Create an instance of ClientRegistry to manage clients
         ClientRegistry clientRegistry = new ClientRegistry(connectionChannel, publishChannel);
 
-        // Iniciar la gestión de conexiones de clientes
-            try {
-                clientRegistry.setupRegistrationListener();  // Ejecuta el listener de conexiones
-                System.out.println("Listener de conexiones iniciado.");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        // Crear y configurar MessageSender para enviar mensajes cada segundo
+        // Start managing client connections
+        try {
+            clientRegistry.setupRegistrationListener();  // Run the connection listener
+            System.out.println("Connection listener started.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Create and configure MessageSender to send messages every second
         MessageSender messageSender = new MessageSender(publishChannel, reader, clientRegistry);
         messageSender.startSendingMessages();
 
-        // Configurar el shutdown hook para liberar recursos cuando el servidor se detenga
+        // Set up a shutdown hook to release resources when the server stops
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 if (connectionChannel.isOpen()) connectionChannel.close();
                 if (publishChannel.isOpen()) publishChannel.close();
                 if (connection.isOpen()) connection.close();
-                System.out.println("Conexión y canales cerrados.");
+                System.out.println("Connection and channels closed.");
             } catch (Exception e) {
                 e.printStackTrace();
             }

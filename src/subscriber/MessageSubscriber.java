@@ -1,4 +1,4 @@
-package suscriber;
+package subscriber;
 
 import com.rabbitmq.client.DeliverCallback;
 import gui.Chart;
@@ -19,56 +19,55 @@ public class MessageSubscriber {
     }
 
     /**
-     * Inicia la suscripción a mensajes en la cola especificada
-     * @param queueName Nombre de la cola a suscribir
-     * @param messageLimit Límite de mensajes a recibir
+     * Starts the message subscription for the specified queue
+     * @param queueName Name of the queue to subscribe to
+     * @param messageLimit Limit of messages to receive
      * @throws Exception
      */
     public void startSubscription(String queueName, int messageLimit) throws Exception {
 
         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
             try {
-                // Obtener el mensaje en formato de texto
+                // Get the message as a text
                 String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                 System.out.println(" [x] Received '" + GREEN + message + RESET + "'");
 
-                // Recuperar el número de línea desde las cabeceras del mensaje
+                // Retrieve the line number from the message headers
                 Map<String, Object> headers = delivery.getProperties().getHeaders();
                 if (headers != null && headers.containsKey("line-number")) {
                     int lineNumber = (int) headers.get("line-number");
-                    // Procesar el mensaje y actualizar el gráfico
+                    // Process the message and update the chart
                     SwingUtilities.invokeLater(() -> {
                         try {
                             double bpm = 1D / Double.parseDouble(message);
                             chart.addDataPoint(lineNumber, bpm);
                         } catch (NumberFormatException e) {
-                            System.err.println("Error al convertir el mensaje a número: " + message);
+                            System.err.println("Error converting message to number: " + message);
                         }
                     });
                 } else {
-                    System.out.println("Cabecera 'line-number' no encontrada en el mensaje.");
+                    System.out.println("Header 'line-number' not found in the message.");
                 }
 
-
             } catch (Exception e) {
-                System.out.println(" [!] Conexión o canal cerrado. Intentando re-registrar...");
+                System.out.println(" [!] Connection or channel closed. Attempting to re-register...");
                 reStartSubscription(messageLimit);
             }
         };
 
-        // Aquí es donde el cliente realmente se suscribe a la cola en RabbitMQ
+        // This is where the client actually subscribes to the queue in RabbitMQ
         rabbitMQClient.getChannel().basicConsume(queueName, true, deliverCallback, consumerTag -> {});
     }
 
     /**
-     * Re-registra el cliente y reinicia la suscripción
-     * @param messageLimit Límite de mensajes a recibir
+     * Re-registers the client and restarts the subscription
+     * @param messageLimit Limit of messages to receive
      */
     private void reStartSubscription(int messageLimit) {
         try {
-            // Re-registrar el cliente y reiniciar la suscripción
+            // Re-register the client and restart the subscription
             String newQueueName = chart.getClientRegistrer().reRegisterClient(messageLimit);
-            startSubscription(newQueueName, messageLimit); // Reiniciar la suscripción con la nueva cola
+            startSubscription(newQueueName, messageLimit); // Restart the subscription with the new queue
         } catch (Exception e) {
             e.printStackTrace();
         }
