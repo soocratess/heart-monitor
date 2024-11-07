@@ -1,1 +1,3 @@
 usar bien la threadpool
+
+hacer que el nombre de la cola la genere el servidor pero con system time milisegundos

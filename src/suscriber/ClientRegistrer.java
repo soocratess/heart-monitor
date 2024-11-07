@@ -23,7 +23,9 @@ public class ClientRegistrer {
      * @throws Exception
      */
     public String registerClient(int messageLimit) throws Exception {
-        String queueName = rabbitMQClient.getChannel().queueDeclare("", false, false, true, null).getQueue();
+        // Nombre de la cola dinámico basado en el tiempo en milisegundos
+        String queueName = "rabbit.client-" + System.currentTimeMillis();
+        rabbitMQClient.getChannel().queueDeclare(queueName, false, false, false, null);
         rabbitMQClient.getChannel().queueBind(queueName, RabbitMQClient.getMessageQueue(), "");
 
         // Enviar el límite de mensajes al servidor para registrarlo

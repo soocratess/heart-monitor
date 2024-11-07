@@ -11,11 +11,13 @@ import java.util.HashMap;
  */
 public class ClientRegistry {
     private static final String REGISTRATION_QUEUE = "registration_queue";
-    private final Channel clientChannel; // Canal exclusivo para el manejo de clientes
+    private final Channel connectionChannel; // Canal exclusivo para el manejo de clientes
+    private final Channel publishChannel; // Canal para publicar mensajes
     private final HashMap<String, ClientQueueInfo> queueInfoMap;
 
-    public ClientRegistry(Channel clientChannel) {
-        this.clientChannel = clientChannel;
+    public ClientRegistry(Channel clientChannel, Channel publishChannel) {
+        this.connectionChannel = clientChannel;
+        this.publishChannel = publishChannel;
         this.queueInfoMap = new HashMap<>();
     }
 
@@ -25,7 +27,7 @@ public class ClientRegistry {
             int messageLimit = Integer.parseInt(new String(delivery.getBody(), "UTF-8"));
             addClientQueue(queueName, messageLimit);
         };
-        clientChannel.basicConsume(REGISTRATION_QUEUE, true, registerCallback, consumerTag -> {});
+        connectionChannel.basicConsume(REGISTRATION_QUEUE, true, registerCallback, consumerTag -> {});
     }
 
     public void addClientQueue(String queueName, int messageLimit) {
@@ -43,7 +45,7 @@ public class ClientRegistry {
 
             queueInfo.incrementMessageCount();
             if (queueInfo.hasReachedLimit()) {
-                clientChannel.queueDelete(queueName); // Eliminar solo la cola del cliente
+                publishChannel.queueDelete(queueName); // Eliminar solo la cola del cliente
                 iterator.remove();
                 System.out.println("Cola " + queueName + " eliminada .");
             }

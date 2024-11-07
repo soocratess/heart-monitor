@@ -4,10 +4,9 @@ import com.rabbitmq.client.*;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
 
-public class EmitLog {
+public class Server {
 
     private static final String EXCHANGE_NAME = "logs";
     private static final int THREAD_POOL_SIZE = 4;
@@ -30,15 +29,12 @@ public class EmitLog {
         BufferedReader reader = new BufferedReader(new FileReader("src/data/rr1.txt"));
 
         // Crear una instancia de ClientRegistry para la gestión de clientes
-        ClientRegistry clientRegistry = new ClientRegistry(connectionChannel);
-
-        // Crear una instancia de ConnectionManager para gestionar conexiones de clientes
-        ConnectionManager connectionManager = new ConnectionManager(connectionChannel, publishChannel);
+        ClientRegistry clientRegistry = new ClientRegistry(connectionChannel, publishChannel);
 
         // Iniciar la gestión de conexiones de clientes
         threadPool.scheduleAtFixedRate(() -> {
             try {
-                connectionManager.startListeningForConnections();
+                clientRegistry.setupRegistrationListener();
             } catch (Exception e) {
                 e.printStackTrace();
             }

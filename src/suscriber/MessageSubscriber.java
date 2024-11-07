@@ -25,11 +25,9 @@ public class MessageSubscriber {
      * @throws Exception
      */
     public void startSubscription(String queueName, int messageLimit) throws Exception {
-        final int[] messageCount = {0};
 
         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
             try {
-                if (messageCount[0] < messageLimit) {
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
                     System.out.println(" [x] Received '" + GREEN + message + RESET + "'");
 
@@ -41,13 +39,6 @@ public class MessageSubscriber {
                             System.err.println("Error al convertir el mensaje a número: " + message);
                         }
                     });
-
-                    messageCount[0]++;
-
-                    if (messageCount[0] >= messageLimit) {
-                        closeResources(queueName);
-                    }
-                }
             } catch (Exception e) {
                 System.out.println(" [!] Conexión o canal cerrado. Intentando re-registrar...");
                 reStartSubscription(messageLimit);
@@ -67,22 +58,6 @@ public class MessageSubscriber {
             // Re-registrar el cliente y reiniciar la suscripción
             String newQueueName = chart.getClientRegistrer().reRegisterClient(messageLimit);
             startSubscription(newQueueName, messageLimit); // Reiniciar la suscripción con la nueva cola
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    /**
-     * Cierra los recursos de RabbitMQ
-     * @param queueName Nombre de la cola a cerrar
-     */
-    private void closeResources(String queueName) {
-        try {
-            if (rabbitMQClient.getChannel().isOpen()) rabbitMQClient.getChannel().queueDelete(queueName);
-            if (rabbitMQClient.getChannel().isOpen() && rabbitMQClient.getConnection().isOpen()) rabbitMQClient.close();
-            System.out.println(" [*] Se ha alcanzado el límite de mensajes. Desconectado del servidor.");
-
         } catch (Exception e) {
             e.printStackTrace();
         }
