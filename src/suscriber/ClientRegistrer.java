@@ -27,6 +27,7 @@ public class ClientRegistrer {
         String queueName = "rabbit.client-" + System.currentTimeMillis();
         rabbitMQClient.getChannel().queueDeclare(queueName, false, false, false, null);
         rabbitMQClient.getChannel().queueBind(queueName, RabbitMQClient.getMessageQueue(), "");
+        rabbitMQClient.setQueueName(queueName);
 
         // Enviar el límite de mensajes al servidor para registrarlo
         String message = Integer.toString(messageLimit);

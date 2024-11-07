@@ -1,5 +1,6 @@
 package publisher;
 
+import com.rabbitmq.client.CancelCallback;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DeliverCallback;
 
@@ -27,6 +28,14 @@ public class ClientRegistry {
             int messageLimit = Integer.parseInt(new String(delivery.getBody(), "UTF-8"));
             addClientQueue(queueName, messageLimit);
         };
+
+        // Callback que se ejecutará cuando un cliente se desconecte
+        CancelCallback disconnectCallback = consumerTag -> {
+            System.out.println("Cliente desconectado con consumerTag: " + consumerTag);
+            // Buscar y eliminar la cola del cliente del mapa usando el consumerTag
+            queueInfoMap.entrySet().removeIf(entry -> entry.getKey().equals(consumerTag));
+        };
+
         connectionChannel.basicConsume(REGISTRATION_QUEUE, true, registerCallback, consumerTag -> {});
     }
 

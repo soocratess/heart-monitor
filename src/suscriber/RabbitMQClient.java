@@ -7,6 +7,7 @@ import com.rabbitmq.client.ConnectionFactory;
 public class RabbitMQClient {
     private static final String MESSAGE_QUEUE = "logs";
     private final String HOST_IP;
+    private String queueName;
     private Connection connection;
     private Channel channel;
 
@@ -27,6 +28,11 @@ public class RabbitMQClient {
 
     public Channel getChannel() {
         return channel;
+    }
+
+    // Setters
+    public void setQueueName(String queueName) {
+        this.queueName = queueName;
     }
 
 
@@ -64,7 +70,10 @@ public class RabbitMQClient {
      * @throws Exception
      */
     public void close() throws Exception {
-        if (channel.isOpen()) channel.close();
+        if (channel != null && channel.isOpen()) {
+            channel.queueDelete(queueName);
+            channel.close();
+        }
         if (connection.isOpen()) connection.close();
     }
 }
