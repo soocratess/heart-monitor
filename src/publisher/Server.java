@@ -32,13 +32,14 @@ public class Server {
         ClientRegistry clientRegistry = new ClientRegistry(connectionChannel, publishChannel);
 
         // Iniciar la gestión de conexiones de clientes
-        threadPool.scheduleAtFixedRate(() -> {
+        threadPool.submit(() -> {
             try {
-                clientRegistry.setupRegistrationListener();
+                clientRegistry.setupRegistrationListener();  // Ejecuta el listener de conexiones
+                System.out.println("Listener de conexiones iniciado.");
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }, 0, 10, TimeUnit.SECONDS);
+        });
 
         // Crear y configurar MessageSender para enviar mensajes cada segundo
         MessageSender messageSender = new MessageSender(publishChannel, reader, clientRegistry, threadPool);

@@ -5,6 +5,7 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryLabelPositions;
+import org.jfree.chart.axis.NumberAxis;
 import org.jfree.data.category.DefaultCategoryDataset;
 import suscriber.ClientRegistrer;
 import suscriber.MessageSubscriber;
@@ -42,7 +43,7 @@ public class Chart extends JFrame {
 
 
     public Chart(int messageLimit) {
-        super("ECG Monitor");
+        super("Heart Monitor");
 
         // Configuración básica de la ventana y componentes
         this.timeLeft = messageLimit;
@@ -99,7 +100,7 @@ public class Chart extends JFrame {
      */
     private ChartPanel createChartPanel() {
         JFreeChart chart = ChartFactory.createLineChart(
-                "Electrocardiogram Monitor", "time (s)", "bpm", dataset
+                "Heart Monitor", "time (s)", "bpm", dataset
         );
 
         // Personalizar el eje X para reducir la cantidad de etiquetas mostradas
@@ -115,6 +116,11 @@ public class Chart extends JFrame {
 
         // Cambiar el fondo del gráfico a un color casi blanco
         plot.setBackgroundPaint(new Color(240, 240, 240)); // Color de fondo casi blanco
+
+        // Configurar el eje Y para centrarlo en torno al valor 1.65
+        NumberAxis yAxis = (NumberAxis) plot.getRangeAxis();
+        yAxis.setRange(1.0, 2.3); // Establecer el rango, de modo que 1.65 esté en el centro
+
 
         return new ChartPanel(chart);
     }
